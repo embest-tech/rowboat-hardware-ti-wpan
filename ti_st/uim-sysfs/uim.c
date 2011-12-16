@@ -42,7 +42,7 @@ char uim_bd_address[17];
 bdaddr_t *bd_addr;
 
 /* File descriptor for the UART device*/
-int dev_fd;
+int dev_fd = -1;
 
 static inline void cleanup(int failed)
 {
@@ -60,27 +60,43 @@ static inline void cleanup(int failed)
 }
 
 /*****************************************************************************/
-#ifdef UIM_DEBUG
 /*  Function to Read the firmware version
  *  module into the system. Currently used for
  *  debugging purpose, whenever the baud rate is changed
  */
 void read_firmware_version()
 {
-	int index = 0;
+	int index = 0, n = 0;
 	char resp_buffer[20] = { 0 };
+	unsigned char resp[100];		/* Response */
 	unsigned char buffer[] = { 0x01, 0x01, 0x10, 0x00 };
 
 	UIM_START_FUNC();
-	UIM_VER(" wrote %d bytes", (int)write(dev_fd, buffer, 4));
-	UIM_VER(" reading %d bytes", (int)read(dev_fd, resp_buffer, 15));
+	do {
+		n = write(dev_fd, buffer, 4);
+		if (n < 0) {
+			UIM_ERR("Failed to write init command (READ_LOCAL_VERSION_INFORMATION)");
+			return -1;
+		}
+		if (n < 4) {
+			fprintf(stderr, "Wanted to write 4 bytes, could only write %d. Stop\n", n);
+			return -1;
+		}
+
+		/* Read reply. */
+		if (read_hci_event(dev_fd, resp, 100) < 0) {
+			UIM_ERR("Failed to read init response (READ_LOCAL_VERSION_INFORMATION)");
+			return -1;
+		}
+
+		/* Wait for command complete event for our Opcode */
+	} while (resp[4] != 0x01 && resp[5] != 0x10);
 
 	for (index = 0; index < 15; index++)
-		UIM_VER(" %x ", resp_buffer[index]);
+		UIM_ERR(" %x ", resp[index]);
 
 	printf("\n");
 }
-#endif /* UIM_DEBUG */
 
 /*****************************************************************************/
 #ifdef ANDROID                 /* library for android to do insmod/rmmod  */
@@ -428,6 +444,7 @@ int st_uart_config(unsigned char install)
 		}
 
 		fcntl(dev_fd, F_SETFL,fcntl(dev_fd, F_GETFL) | O_NONBLOCK);
+		read_firmware_version();
 		/* Set only thecustom baud rate */
 		if (cust_baud_rate != 115200) {
 
