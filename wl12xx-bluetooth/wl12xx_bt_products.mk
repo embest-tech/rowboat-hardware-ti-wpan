@@ -8,6 +8,12 @@ PRODUCT_COPY_FILES += \
 ifeq ($(TARGET_PRODUCT), am335xevm)
 PRODUCT_COPY_FILES += \
     hardware/ti/wpan/wl12xx-bluetooth/firmware/am335xevm_TIInit_7.2.31.bts:system/etc/firmware/TIInit_7.2.31.bts
+else ifeq ($(TARGET_PRODUCT), devkit8600)
+PRODUCT_COPY_FILES += \
+    hardware/ti/wpan/wl12xx-bluetooth/firmware/am335xevm_TIInit_7.2.31.bts:system/etc/firmware/TIInit_7.2.31.bts
+else ifeq ($(TARGET_PRODUCT), sbc8600)
+PRODUCT_COPY_FILES += \
+    hardware/ti/wpan/wl12xx-bluetooth/firmware/am335xevm_TIInit_7.2.31.bts:system/etc/firmware/TIInit_7.2.31.bts
 else
 PRODUCT_COPY_FILES += \
     hardware/ti/wpan/wl12xx-bluetooth/firmware/omap3evm_TIInit_7.2.31.bts:system/etc/firmware/TIInit_7.2.31.bts
